@@ -77,14 +77,20 @@ All CTA buttons trigger:
 ## 📁 Project Structure
 
 ```
-app/
-  layout.tsx
-  page.tsx
-
-components/
-  ui/
-    button.tsx
-    card.tsx
+growthpath-landing/
+├── app/                 # Next.js App Router (pages, layout, metadata)
+├── components/          # Reusable UI components (shadcn + custom)
+├── lib/                 # Utility functions and helpers
+├── public/              # Static assets (icons, images, favicon)
+├── components.json      # shadcn configuration
+├── eslint.config.mjs    # ESLint configuration
+├── next.config.ts       # Next.js configuration
+├── next-env.d.ts        # Next.js TypeScript definitions
+├── postcss.config.mjs   # PostCSS configuration
+├── tsconfig.json        # TypeScript configuration
+├── package.json         # Project dependencies and scripts
+├── package-lock.json    # Dependency lock file
+└── README.md            # Project documentation
 ```
 
 ---
@@ -129,5 +135,4 @@ npm start
 
 ## 👤 Author
 
-GrowthPath Digital Consulting  
-AI-Powered Marketing Infrastructure
+Bamiduro Eniola G. (GBT3K)
