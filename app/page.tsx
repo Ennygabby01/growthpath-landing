@@ -326,7 +326,7 @@ export default function GrowthPathLanding() {
       </section>
 
       {/* ── STATS ───────────────────────────────────────────────────────── */}
-      <section ref={statsRef} className="py-16">
+      <section ref={statsRef} className="py-8 md:py-12">
         <div className="max-w-3xl mx-auto px-6">
           <div className="grid grid-cols-3 gap-3 md:gap-4">
             {[
@@ -356,10 +356,10 @@ export default function GrowthPathLanding() {
       </section>
 
       {/* ── SERVICES ────────────────────────────────────────────────────── */}
-      <section id="services" className="py-24 md:py-32">
+      <section id="services" className="py-14 md:py-20">
         <div className="max-w-6xl mx-auto px-6">
 
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 md:mb-14">
             <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -446,7 +446,7 @@ export default function GrowthPathLanding() {
       </section>
 
       {/* ── HOW IT WORKS ────────────────────────────────────────────────── */}
-      <section id="process" className="py-24 md:py-32 relative overflow-hidden">
+      <section id="process" className="py-14 md:py-20 relative overflow-hidden">
 
         {/* Subtle background sweep */}
         <div className="absolute inset-0 pointer-events-none"
@@ -454,7 +454,7 @@ export default function GrowthPathLanding() {
         />
 
         <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-20">
+          <div className="text-center mb-12 md:mb-16">
             <p className="text-purple-400/80 text-xs font-semibold uppercase tracking-[0.2em] mb-3">How It Works</p>
             <h2 className="text-3xl md:text-5xl font-bold">Three Steps to Scale</h2>
           </div>
@@ -511,7 +511,7 @@ export default function GrowthPathLanding() {
       </section>
 
       {/* ── CTA ─────────────────────────────────────────────────────────── */}
-      <section id="contact" className="py-24 md:py-32">
+      <section id="contact" className="py-14 md:py-20">
         <div className="max-w-4xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
