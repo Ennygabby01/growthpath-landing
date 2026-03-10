@@ -14,7 +14,7 @@ export default function GrowthPathLanding() {
     script.type = "text/javascript";
     script.onload = () => {
       (window as any).voiceflow?.chat?.load({
-        verify: { projectID: "6999af97e3ec6ddc82607074" },
+        verify: { projectID: "69afe44851ea9833d0f6f240" },
         url: "https://general-runtime.voiceflow.com",
         versionID: "production",
       });
