@@ -537,13 +537,15 @@ export default function GrowthPathLanding() {
               Book a free strategy session and discover how GrowthPath can transform your business pipeline.
             </p>
 
-            <Button
-              onClick={openChat}
-              className="relative group bg-purple-600 hover:bg-purple-500 text-white rounded-2xl px-10 py-6 text-base font-semibold border border-purple-400/30 shadow-2xl shadow-purple-600/35 flex items-center gap-2 mx-auto cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-purple-500/50"
-            >
-              Book Free Strategy Session
-              <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-200" />
-            </Button>
+            <div className="flex justify-center">
+              <Button
+                onClick={openChat}
+                className="relative group bg-purple-600 hover:bg-purple-500 text-white rounded-2xl px-10 py-6 text-base font-semibold border border-purple-400/30 shadow-2xl shadow-purple-600/35 flex items-center gap-2 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-purple-500/50"
+              >
+                Book Free Strategy Session
+                <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-200" />
+              </Button>
+            </div>
           </motion.div>
         </div>
       </section>
