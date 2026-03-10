@@ -124,26 +124,6 @@ Primary Brand Color:
 
 ---
 
----
-
-## 📸 Screenshots
-
-<p align="center">
-  <img src="screenshots/gp1.png" width="45%">
-  <img src="screenshots/gp2.png" width="45%">
-</p>
-
-<p align="center">
-  <img src="screenshots/gp3.png" width="45%">
-  <img src="screenshots/gp4.png" width="45%">
-</p>
-
-<p align="center">
-  <img src="screenshots/gp5.png" width="60%">
-</p>
-
----
-
 ## 🛠 Production Build
 
 ```bash

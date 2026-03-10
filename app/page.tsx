@@ -1,13 +1,121 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlignJustify, X, Rocket, Layers, BarChart3, Bot, Calendar } from "lucide-react";
+import {
+  AlignJustify, X, Rocket, BarChart3, Bot,
+  Calendar, ArrowRight, Zap, Target, TrendingUp, CheckCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function GrowthPathLanding() {
-  const [open, setOpen] = useState(false);
+/* ─── Animated particle canvas ─────────────────────────────────────────── */
+function ParticleField() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+
+    type Particle = { x: number; y: number; vx: number; vy: number; r: number; a: number };
+    const particles: Particle[] = [];
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    for (let i = 0; i < 90; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: Math.random() * 1.4 + 0.4,
+        a: Math.random() * 0.45 + 0.08,
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 130) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(160,80,255,${(1 - d / 130) * 0.12})`;
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      particles.forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(180,100,255,${p.a})`;
+        ctx.fill();
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      });
+
+      animId = requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(animId);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
+}
+
+/* ─── Noise texture svg data url ────────────────────────────────────────── */
+const noiseBg =
+  "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+
+/* ─── Counter hook ───────────────────────────────────────────────────────── */
+function useCounter(target: number, duration = 1500, active = false) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const start = Date.now();
+    const tick = () => {
+      const p = Math.min((Date.now() - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setValue(Math.round(eased * target));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    tick();
+  }, [active, target, duration]);
+  return value;
+}
+
+/* ─── Main page ─────────────────────────────────────────────────────────── */
+export default function GrowthPathLanding() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [statsVisible, setStatsVisible] = useState(false);
+  const statsRef = useRef<HTMLDivElement>(null);
+
+  const c1 = useCounter(3, 1200, statsVisible);
+  const c2 = useCounter(10, 1400, statsVisible);
+  const c3 = useCounter(98, 1600, statsVisible);
+
+  /* ── Voiceflow ── */
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs";
@@ -22,61 +130,81 @@ export default function GrowthPathLanding() {
     document.body.appendChild(script);
   }, []);
 
-  const openChat = () => {
-    (window as any).voiceflow?.chat?.open?.();
-  };
+  /* ── Stats intersection observer ── */
+  useEffect(() => {
+    const el = statsRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setStatsVisible(true); obs.disconnect(); } },
+      { threshold: 0.4 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
+  const openChat = () => (window as any).voiceflow?.chat?.open?.();
+
+  /* ─────────────────────────────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
+    <div className="min-h-screen bg-[#07050f] text-white overflow-x-hidden selection:bg-purple-500/30">
 
-      {/* HEADER */}
-      <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      {/* ── HEADER ──────────────────────────────────────────────────────── */}
+      <header className="fixed top-0 w-full z-50 px-4 pt-4">
+        <div className="max-w-7xl mx-auto bg-white/[0.04] backdrop-blur-2xl border border-white/[0.08] rounded-2xl px-6 py-3.5 flex items-center justify-between shadow-xl shadow-black/40">
 
-          <div className="text-2xl font-semibold tracking-tight text-[#7018B4] cursor-pointer">
-            GrowthPath
+          <div className="text-lg font-bold tracking-tight cursor-pointer">
+            <span className="bg-gradient-to-r from-purple-400 to-violet-300 bg-clip-text text-transparent">Growth</span>
+            <span className="text-white">Path</span>
           </div>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center bg-[#7018B4] rounded-full text-sm font-medium text-white overflow-hidden">
-            <a href="#services" className="px-6 py-3 border-r border-white/40 hover:bg-white/10 transition">
-              Services
-            </a>
-            <a href="#process" className="px-6 py-3 border-r border-white/40 hover:bg-white/10 transition">
-              Process
-            </a>
-            <a href="#contact" className="px-6 py-3 hover:bg-white/10 transition">
-              Contact
-            </a>
-          </div>
+          <nav className="hidden md:flex items-center">
+            {(["Services", "Process", "Contact"] as const).map((label) => (
+              <a
+                key={label}
+                href={`#${label.toLowerCase()}`}
+                className="px-4 py-2 text-sm text-white/50 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all duration-200"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
 
-          <div className="hidden md:block">
-            <Button onClick={openChat} className="bg-[#7018B4] text-white rounded-full px-6 flex items-center gap-2 cursor-pointer">
-              <Calendar size={16} />
-              Book Session
-            </Button>
-          </div>
+          <Button
+            onClick={openChat}
+            className="hidden md:flex bg-purple-600 hover:bg-purple-500 text-white rounded-xl px-5 h-9 text-sm items-center gap-2 border border-purple-500/40 shadow-lg shadow-purple-600/20 cursor-pointer transition-all"
+          >
+            <Calendar size={13} />
+            Book Session
+          </Button>
 
-          {/* Mobile Icon */}
-          <div className="md:hidden cursor-pointer" onClick={() => setOpen(!open)}>
-            {open ? <X /> : <AlignJustify />}
-          </div>
+          <button
+            className="md:hidden text-white/60 hover:text-white transition"
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            {menuOpen ? <X size={20} /> : <AlignJustify size={20} />}
+          </button>
         </div>
 
-        {/* Mobile Dropdown */}
         <AnimatePresence>
-          {open && (
+          {menuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.25 }}
-              className="md:hidden bg-white border-t border-gray-100 px-6 py-6 space-y-6"
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-7xl mx-auto mt-1 bg-[#0c0818]/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl px-6 py-5 space-y-4"
             >
-              <a href="#services" className="block">Services</a>
-              <a href="#process" className="block">Process</a>
-              <a href="#contact" className="block">Contact</a>
-              <Button onClick={openChat} className="w-full bg-[#7018B4] text-white rounded-full">
+              {(["Services", "Process", "Contact"] as const).map((label) => (
+                <a
+                  key={label}
+                  href={`#${label.toLowerCase()}`}
+                  onClick={() => setMenuOpen(false)}
+                  className="block text-white/60 hover:text-white transition text-sm"
+                >
+                  {label}
+                </a>
+              ))}
+              <Button onClick={openChat} className="w-full bg-purple-600 hover:bg-purple-500 text-white rounded-xl cursor-pointer">
                 Book Session
               </Button>
             </motion.div>
@@ -84,210 +212,359 @@ export default function GrowthPathLanding() {
         </AnimatePresence>
       </header>
 
-      {/* HERO */}
-      <section className="pt-32 md:pt-36 pb-20 md:pb-28 bg-[#7018B4] text-white text-center">
-        <div className="max-w-5xl mx-auto px-6">
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
+      {/* ── HERO ────────────────────────────────────────────────────────── */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <ParticleField />
+
+        {/* Noise */}
+        <div
+          className="absolute inset-0 opacity-[0.025] pointer-events-none"
+          style={{ backgroundImage: noiseBg, backgroundSize: "220px 220px" }}
+        />
+
+        {/* Grid */}
+        <div
+          className="absolute inset-0 opacity-[0.035] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(140,60,255,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(140,60,255,.8) 1px,transparent 1px)",
+            backgroundSize: "64px 64px",
+          }}
+        />
+
+        {/* Gradient orbs */}
+        <div className="absolute top-1/3 left-1/4 w-[480px] h-[480px] rounded-full bg-purple-700/18 blur-[130px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-[380px] h-[380px] rounded-full bg-violet-600/12 blur-[110px] pointer-events-none" />
+
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-28 md:pt-36">
+
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl md:text-6xl font-semibold leading-tight"
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-1.5 text-[11px] text-purple-300 mb-10 backdrop-blur-sm"
           >
-            Intelligent Growth Infrastructure
-            <br className="hidden md:block" />
-            Built for Modern Businesses
+            <Zap size={11} className="text-purple-400" />
+            AI-Powered Growth Infrastructure
+          </motion.div>
+
+          {/* Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="text-5xl sm:text-6xl md:text-7xl lg:text-[86px] font-extrabold leading-[0.92] tracking-tight"
+          >
+            <span className="text-white">Intelligent</span>
+            <br />
+            <span
+              className="bg-clip-text text-transparent"
+              style={{
+                backgroundImage: "linear-gradient(135deg, #c084fc 0%, #a855f7 40%, #7c3aed 80%, #c084fc 100%)",
+              }}
+            >
+              Growth Systems
+            </span>
+            <br />
+            <span className="text-white/30 text-4xl md:text-5xl lg:text-6xl font-light">for Modern Business</span>
           </motion.h1>
 
-          <p className="mt-6 md:mt-8 text-lg text-purple-100 max-w-2xl mx-auto">
+          <motion.p
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.25 }}
+            className="mt-8 text-base md:text-lg text-white/45 max-w-lg mx-auto leading-relaxed"
+          >
             AI qualification. Automated booking. Structured follow-ups.
-            Conversion without friction.
-          </p>
+            <br className="hidden md:block" />
+            Convert visitors into revenue — without friction.
+          </motion.p>
 
-<div className="mt-8 md:mt-12 flex flex-col sm:flex-row gap-5 justify-center items-center w-full">
-  
-  <Button
-  onClick={openChat}
-  className="w-full sm:w-[260px] bg-white text-[#7018B4] hover:bg-[#4c0e7c] hover:text-white rounded-full py-6 text-base cursor-pointer"
->
-  Book Free Strategy Session
-</Button>
+          {/* CTA buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.38 }}
+            className="mt-10 flex flex-col sm:flex-row gap-3 justify-center"
+          >
+            <Button
+              onClick={openChat}
+              className="group bg-purple-600 hover:bg-purple-500 text-white rounded-2xl px-8 py-6 text-base font-semibold border border-purple-400/30 shadow-2xl shadow-purple-600/30 flex items-center gap-2 cursor-pointer transition-all duration-300 hover:shadow-purple-500/40 hover:-translate-y-0.5"
+            >
+              Book Free Strategy Session
+              <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-200" />
+            </Button>
 
-<Button
-  onClick={openChat}
-  className="w-full sm:w-[260px] bg-[#121212] text-white rounded-full py-6 hover:bg-[#4c0e7c] flex items-center justify-center gap-2 text-base cursor-pointer"
->
-  <Bot size={18} />
-  Talk to AI Assistant
-</Button>
+            <Button
+              onClick={openChat}
+              className="group bg-white/[0.06] hover:bg-white/[0.1] text-white rounded-2xl px-8 py-6 text-base font-medium border border-white/[0.09] flex items-center gap-2 cursor-pointer transition-all duration-300 backdrop-blur-sm hover:-translate-y-0.5"
+            >
+              <Bot size={15} className="text-purple-400" />
+              Talk to AI Assistant
+            </Button>
+          </motion.div>
 
-</div>
+          {/* Trust row */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.65 }}
+            className="mt-14 flex items-center justify-center gap-6 md:gap-10 flex-wrap"
+          >
+            {["AI-Qualified Leads", "Automated Booking", "24/7 Systems"].map((label) => (
+              <div key={label} className="flex items-center gap-1.5 text-white/28 text-xs">
+                <CheckCircle size={12} className="text-purple-500/70" />
+                {label}
+              </div>
+            ))}
+          </motion.div>
         </div>
+
+        {/* Bottom fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#07050f] to-transparent pointer-events-none" />
       </section>
 
-      {/* WHAT WE BUILD */}
-      <section id="services" className="py-20 md:py-28">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-semibold">What We Build</h2>
-
-          <div className="mt-14 md:mt-20 border border-[#7018B4]">
-            <div className="grid md:grid-cols-3">
-{[
-  { icon: Rocket, title: "Paid Growth" },
-  { icon: Layers, title: "Conversion Systems" },
-  { icon: BarChart3, title: "Strategic Scaling" },
-].map((item, i) => {
-  const isMiddle = i === 1;
-
-  return (
-    <motion.div
-      key={i}
-      whileHover={!isMiddle ? { backgroundColor: "#faf5ff" } : {}}
-      className={`p-10 md:p-14 text-center transition
-        ${i !== 2 ? "md:border-r border-[#7018B4]" : ""}
-        ${isMiddle ? "bg-[#7018B4] text-white" : ""}
-      `}
-    >
-      <item.icon
-        className={`mx-auto ${isMiddle ? "text-white" : "text-[#7018B4]"}`}
-        size={34}
-      />
-
-      <h3 className="mt-6 text-lg md:text-xl font-medium">
-        {item.title}
-      </h3>
-
-      <p
-        className={`mt-3 max-w-xs mx-auto text-sm md:text-base ${
-          isMiddle ? "text-purple-100" : "text-gray-600"
-        }`}
-      >
-        Modern acquisition and automation systems engineered for predictable growth.
-      </p>
-    </motion.div>
-  );
-})}
-            </div>
-          </div>
-        </div>
-      </section>
-
-{/* HOW IT WORKS */}
-<section
-  id="process"
-  className="py-20 md:py-28 bg-gray-50 relative overflow-hidden"
->
-  {/* Dashed flight path */}
-  <div className="absolute top-10 right-10 hidden md:block opacity-20">
-    <svg
-      width="160"
-      height="120"
-      viewBox="0 0 160 120"
-      fill="none"
-      stroke="#7018B4"
-      strokeWidth="1.5"
-      strokeDasharray="6 6"
-    >
-      <path d="M10 100 C 60 10, 120 10, 150 80" />
-    </svg>
-  </div>
-
-  {/* Paper plane */}
-  <div className="absolute top-6 right-6 hidden md:block opacity-30">
-    <svg
-      width="50"
-      height="50"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#7018B4"
-      strokeWidth="1.5"
-    >
-      <path d="M22 2L11 13" />
-      <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-    </svg>
-  </div>
-
-  <div className="max-w-4xl mx-auto px-6">
-    <div className="text-center">
-      <h2 className="text-3xl md:text-4xl font-semibold">
-        How It Works
-      </h2>
-    </div>
-
-    <div className="relative mt-16 md:mt-24">
-      {/* Vertical line */}
-      <div className="absolute left-4 md:left-1/2 md:-translate-x-1/2 top-0 h-full w-px bg-gray-200" />
-
-      {[
-        {
-          title: "Start Conversation",
-          text: "Visitors interact with our AI assistant which qualifies intent instantly."
-        },
-        {
-          title: "Automated Qualification",
-          text: "Leads are scored, logged into CRM, and high-value prospects are identified."
-        },
-        {
-          title: "Convert & Scale",
-          text: "Qualified leads book strategy sessions and enter structured follow-ups."
-        },
-      ].map((step, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className={`relative mb-16 md:mb-20 md:flex ${
-            i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
-          }`}
-        >
-          {/* Dot */}
-          <div className="absolute left-0 md:left-1/2 md:-translate-x-1/2 w-6 h-6 md:w-8 md:h-8 bg-[#7018B4] rounded-full border-4 border-white" />
-
-          <div className="ml-12 md:ml-0 md:w-1/2 md:px-12">
-            <h3 className="text-xl md:text-2xl font-medium">
-              {step.title}
-            </h3>
-            <p className="mt-3 md:mt-4 text-gray-600 leading-relaxed text-sm md:text-base">
-              {step.text}
-            </p>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  </div>
-</section>
-
-      {/* CTA */}
-      <section id="contact" className="py-20 md:py-24 text-center bg-[#7018B4] text-white">
+      {/* ── STATS ───────────────────────────────────────────────────────── */}
+      <section ref={statsRef} className="py-16">
         <div className="max-w-3xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-semibold">Ready to Automate Growth?</h2>
-          <Button onClick={openChat} className="mt-8 md:mt-10 bg-white text-[#7018B4] hover:text-white rounded-full px-12 py-6 mx-auto cursor-pointer">
-            Book Free Strategy Session
-          </Button>
+          <div className="grid grid-cols-3 gap-3 md:gap-4">
+            {[
+              { val: c1, suffix: "x", label: "Revenue Multiplier" },
+              { val: c2, suffix: "+", label: "Hours Saved / Week" },
+              { val: c3, suffix: "%", label: "Lead Show-Up Rate" },
+            ].map((s, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+                className="group relative bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 md:p-7 text-center overflow-hidden hover:border-purple-500/25 transition-all duration-300"
+              >
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: "radial-gradient(ellipse at 50% 100%, rgba(112,24,180,0.12) 0%, transparent 70%)" }}
+                />
+                <div className="text-3xl md:text-4xl font-extrabold bg-gradient-to-br from-white to-purple-300 bg-clip-text text-transparent tabular-nums">
+                  {s.val}{s.suffix}
+                </div>
+                <div className="mt-1.5 text-[11px] text-white/35 leading-tight">{s.label}</div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
-<footer className="bg-[#5A1092] text-white">
-  <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between text-xs md:text-sm">
-    
-    <p className="opacity-80">
-      © {new Date().getFullYear()} GrowthPath Digital Consulting
-    </p>
+      {/* ── SERVICES ────────────────────────────────────────────────────── */}
+      <section id="services" className="py-24 md:py-32">
+        <div className="max-w-6xl mx-auto px-6">
 
-    <div className="flex items-center gap-6 mt-2 md:mt-0 opacity-80">
-      <a href="#services" className="hover:opacity-100 transition">
-        Services
-      </a>
-      <a href="#process" className="hover:opacity-100 transition">
-        Process
-      </a>
-      <a href="#contact" className="hover:opacity-100 transition">
-        Contact
-      </a>
-    </div>
+          <div className="text-center mb-16">
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-purple-400/80 text-xs font-semibold uppercase tracking-[0.2em] mb-3"
+            >
+              What We Build
+            </motion.p>
+            <motion.h2
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-3xl md:text-5xl font-bold"
+            >
+              Systems That Scale
+            </motion.h2>
+          </div>
 
-  </div>
-</footer>
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              {
+                Icon: Rocket,
+                title: "Paid Growth",
+                desc: "Data-driven ad campaigns across every channel, engineered for acquisition at scale. ROI-first from day one.",
+                featured: false,
+              },
+              {
+                Icon: Target,
+                title: "Conversion Systems",
+                desc: "AI-powered funnels that qualify, nurture, and convert. Your pipeline runs on autopilot around the clock.",
+                featured: true,
+              },
+              {
+                Icon: TrendingUp,
+                title: "Strategic Scaling",
+                desc: "Full-stack growth infrastructure — from zero to systematic, predictable, measurable revenue.",
+                featured: false,
+              },
+            ].map(({ Icon, title, desc, featured }, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 28 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                whileHover={{ y: -5 }}
+                className={`relative rounded-2xl p-8 overflow-hidden group cursor-default transition-all duration-300 ${
+                  featured
+                    ? "bg-gradient-to-br from-purple-600/25 to-violet-800/15 border border-purple-500/30 shadow-2xl shadow-purple-600/15"
+                    : "bg-white/[0.03] border border-white/[0.07] hover:border-purple-500/20"
+                }`}
+              >
+                {/* Noise layer */}
+                <div
+                  className="absolute inset-0 opacity-[0.03] pointer-events-none rounded-2xl"
+                  style={{ backgroundImage: noiseBg, backgroundSize: "160px 160px" }}
+                />
+
+                {featured && (
+                  <span className="absolute top-5 right-5 text-[10px] bg-purple-500/20 border border-purple-400/30 text-purple-300 rounded-full px-2.5 py-0.5 tracking-wide">
+                    Premium
+                  </span>
+                )}
+
+                <div
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center mb-7 ${
+                    featured ? "bg-purple-500/25" : "bg-white/[0.05]"
+                  }`}
+                >
+                  <Icon size={20} className={featured ? "text-purple-300" : "text-purple-400"} />
+                </div>
+
+                <h3 className="text-xl font-semibold mb-3">{title}</h3>
+                <p className="text-white/45 text-sm leading-relaxed">{desc}</p>
+
+                <div className="mt-7 flex items-center gap-1 text-purple-400 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  Learn more <ArrowRight size={11} />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ────────────────────────────────────────────────── */}
+      <section id="process" className="py-24 md:py-32 relative overflow-hidden">
+
+        {/* Subtle background sweep */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(112,24,180,0.06) 0%, transparent 70%)" }}
+        />
+
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <p className="text-purple-400/80 text-xs font-semibold uppercase tracking-[0.2em] mb-3">How It Works</p>
+            <h2 className="text-3xl md:text-5xl font-bold">Three Steps to Scale</h2>
+          </div>
+
+          <div className="relative">
+            {/* Vertical connector */}
+            <div className="absolute left-[30px] md:left-1/2 md:-translate-x-px top-0 bottom-0 w-px bg-gradient-to-b from-purple-500/50 via-purple-500/20 to-transparent" />
+
+            {[
+              {
+                num: "01",
+                Icon: Bot,
+                title: "Start Conversation",
+                text: "Visitors interact with our AI assistant which instantly qualifies their intent and pain points.",
+              },
+              {
+                num: "02",
+                Icon: BarChart3,
+                title: "Automated Qualification",
+                text: "Leads are scored, logged into CRM, and high-value prospects are identified in real-time.",
+              },
+              {
+                num: "03",
+                Icon: Rocket,
+                title: "Convert & Scale",
+                text: "Qualified leads book strategy sessions and enter structured follow-up sequences automatically.",
+              },
+            ].map(({ num, Icon, title, text }, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: i % 2 === 0 ? -24 : 24 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.55, delay: i * 0.14 }}
+                className={`relative mb-16 md:flex ${i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"} items-start gap-8`}
+              >
+                {/* Dot */}
+                <div className="absolute left-[22px] md:left-1/2 md:-translate-x-1/2 w-[18px] h-[18px] bg-[#07050f] border-2 border-purple-500 rounded-full flex items-center justify-center z-10 mt-1">
+                  <div className="w-[6px] h-[6px] bg-purple-500 rounded-full" />
+                </div>
+
+                <div className={`ml-16 md:ml-0 md:w-1/2 md:px-12 ${i % 2 !== 0 ? "md:text-right" : ""}`}>
+                  <span className="block text-[72px] font-black text-white/[0.03] leading-none select-none -mb-6">{num}</span>
+                  <div className={`flex items-center gap-2.5 mb-3 ${i % 2 !== 0 ? "md:flex-row-reverse" : ""}`}>
+                    <Icon size={17} className="text-purple-400 flex-shrink-0" />
+                    <h3 className="text-xl md:text-2xl font-semibold">{title}</h3>
+                  </div>
+                  <p className="text-white/45 leading-relaxed text-sm md:text-base">{text}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ─────────────────────────────────────────────────────────── */}
+      <section id="contact" className="py-24 md:py-32">
+        <div className="max-w-4xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="relative bg-gradient-to-br from-purple-600/18 to-violet-900/10 border border-purple-500/18 rounded-3xl p-12 md:p-20 text-center overflow-hidden"
+          >
+            {/* Glow center */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: "radial-gradient(ellipse 70% 50% at 50% 100%, rgba(112,24,180,0.18) 0%, transparent 70%)" }}
+            />
+            {/* Noise */}
+            <div
+              className="absolute inset-0 opacity-[0.025] pointer-events-none rounded-3xl"
+              style={{ backgroundImage: noiseBg, backgroundSize: "200px 200px" }}
+            />
+
+            <p className="relative text-purple-400/80 text-xs font-semibold uppercase tracking-[0.2em] mb-5">Get Started</p>
+            <h2 className="relative text-3xl md:text-5xl font-bold mb-5">Ready to Automate Growth?</h2>
+            <p className="relative text-white/40 mb-10 max-w-md mx-auto text-sm md:text-base leading-relaxed">
+              Book a free strategy session and discover how GrowthPath can transform your business pipeline.
+            </p>
+
+            <Button
+              onClick={openChat}
+              className="relative group bg-purple-600 hover:bg-purple-500 text-white rounded-2xl px-10 py-6 text-base font-semibold border border-purple-400/30 shadow-2xl shadow-purple-600/35 flex items-center gap-2 mx-auto cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-purple-500/50"
+            >
+              Book Free Strategy Session
+              <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-200" />
+            </Button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ──────────────────────────────────────────────────────── */}
+      <footer className="border-t border-white/[0.05] py-8">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="text-sm font-bold">
+            <span className="bg-gradient-to-r from-purple-400 to-violet-300 bg-clip-text text-transparent">Growth</span>
+            <span className="text-white/50">Path</span>
+          </div>
+          <p className="text-white/25 text-xs">© {new Date().getFullYear()} GrowthPath Digital Consulting</p>
+          <div className="flex gap-6 text-xs text-white/35">
+            {(["Services", "Process", "Contact"] as const).map((label) => (
+              <a key={label} href={`#${label.toLowerCase()}`} className="hover:text-white/70 transition">
+                {label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </footer>
 
     </div>
   );
